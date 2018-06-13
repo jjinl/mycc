@@ -1,0 +1,25 @@
+//hhggghjjjjjjjjjjj
+//jhkh
+/*njkk
+jkhljhj*/
+
+#include <stdio.h>
+
+
+void fun(int a,int b){
+	
+	int a >>a;
+	int b >>b;
+	//gghhsadf
+	
+	if(a>b) /*aghduas
+	hjgdhjasf
+	hjasgjhaf*/
+	
+	a++;
+	
+	
+	
+	return c;
+
+}
