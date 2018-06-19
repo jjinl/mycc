@@ -138,12 +138,13 @@ array *lex(char *filename)
 			sym->sym_name = my_malloc(s_len+1);
 			strncpy(sym->sym_name,s_head,s_len );
 			sym->sym_name[s_len] = '\0';
+			sym->value = s_len; //id字符串长度
 			sym->line = line;
 		}
 		//数字处理
 		else if (tmp >= '0' && tmp <= '9') {
 			int ival;
-		    if (ival = tmp - '0'){ //10进制的数
+		    if (ival = tmp - '0'){ //10进制的数 // @suppress("Assignment in condition")
 		    	while (*src >= '0' && *src <= '9')
 		    		ival = ival * 10 + *src++ - '0';
 		    }
@@ -303,7 +304,7 @@ array *lex(char *filename)
 			 sym->line = line;
 			 sym->sym_type = SYM_OP; //运算符
 			 sym->value = OP_MOD;  // %
-		 }else if (tmp == '*') {
+		 }else if (tmp == '*') {  // *= ,取指针内容
 			 sym_tb *sym = alloc_sym();
 			 sym->line = line;
 			 sym->sym_type = SYM_OP; //运算符
@@ -356,6 +357,14 @@ array *lex(char *filename)
 			 sym_tb *sym = alloc_sym();
 			 sym->line = line;
 			 sym->sym_type = SYM_COL; //冒号
+		 }else if(tmp == '.'){
+			 sym_tb *sym = alloc_sym();
+			 sym->line = line;
+			 sym->sym_type = SYM_PU; //点号
+		 }else if((tmp == ' ') || (tmp == '\t')){ //空格 越过
+			 continue;
+		 }else{
+			 printf("词法分析错误line: %d  %d \n",line, tmp);
 		 }
 
 	}
@@ -380,3 +389,281 @@ void free_array(array *arr)
 	arr->len = 0;
 }
 
+
+void lex2(array *arr)
+{
+	int i,n;
+	sym_tb **pdat;
+//	char *p_id;
+
+	if(!arr){
+		printf("arr is NULL\n");
+		return;
+	}
+
+	n = arr->len;
+	pdat = (sym_tb **)arr->data;
+
+	for(i=0;i<n;i++){
+		if(pdat[i]->sym_type == SYM_ID){ //把标识符中关键字替换掉
+			switch(pdat[i]->value){ //字符串长度
+			case 2: //do,if
+				if(!strncmp(pdat[i]->sym_name,"do",2)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_DO;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"if",2)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_IF;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}
+				break;
+			case 3: //for int
+				if(!strncmp(pdat[i]->sym_name,"for",3)){
+						pdat[i]->sym_type = SYM_KW; //关键字
+						pdat[i]->value = KW_FOR;
+						free(pdat[i]->sym_name); //释放空间
+						pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"int",3)){
+						pdat[i]->sym_type = SYM_KW; //关键字
+						pdat[i]->value = KW_INT;
+						free(pdat[i]->sym_name); //释放空间
+						pdat[i]->sym_name = NULL;
+				}
+				break;
+			case 4://auto case char else enum goto long void
+				if(!strncmp(pdat[i]->sym_name,"auto",4)){
+						pdat[i]->sym_type = SYM_KW; //关键字
+						pdat[i]->value = KW_AUTO;
+						free(pdat[i]->sym_name); //释放空间
+						pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"case",4)){
+						pdat[i]->sym_type = SYM_KW; //关键字
+						pdat[i]->value = KW_CASE;
+						free(pdat[i]->sym_name); //释放空间
+						pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"char",4)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_CHAR;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"else",4)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_ELSE;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"enum",4)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_ENUM;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"goto",4)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_GOTO;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"long",4)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_LONG;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"void",4)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_VOID;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}
+				break;
+			case 5: //break const float short union while _Bool
+				if(!strncmp(pdat[i]->sym_name,"break",5)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_BREAK;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"const",5)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_CONST;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"float",5)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_FLOAT;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"short",5)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_SHORT;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"union",5)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_UNION;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"while",5)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_WHILE;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"_Bool",5)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_BOOL;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}
+				break;
+			case 6://double extern inline return signed sizeof static struct switch
+				if(!strncmp(pdat[i]->sym_name,"double",6)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_DOUBLE;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"extern",6)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_EXTERN;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"inline",6)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_INLINE;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"return",6)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_RETURN;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"signed",6)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_SIGNED;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"sizeof",6)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_SIZEOF;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"static",6)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_STATIC;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"struct",6)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_STRUCT;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"switch",6)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_SWITCH;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}
+				break;
+			case 7: //default typedef
+				if(!strncmp(pdat[i]->sym_name,"default",7)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_DEFAULT;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"typedef",7)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_TYPEDEF;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}
+				break;
+			case 8://continue register restrict unsigned volatile _Complex
+				if(!strncmp(pdat[i]->sym_name,"continue",8)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_CONTINUE;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"register",8)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_REGISTER;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"restrict",8)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_RESTRICT;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"unsigned",8)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_UNSIGNED;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"volatile",8)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_VOLATILE;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}else if(!strncmp(pdat[i]->sym_name,"_Complex",8)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_COMPLEX;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}
+				//内置宏
+				else if(!strncmp(pdat[i]->sym_name,"__LINE__",8)){
+					pdat[i]->sym_type = SYM_NUM; //数字
+					pdat[i]->value = pdat[i]->line;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}
+				break;
+			case 10: //_Imaginary
+				if(!strncmp(pdat[i]->sym_name,"_Imaginary",10)){
+					pdat[i]->sym_type = SYM_KW; //关键字
+					pdat[i]->value = KW_IMAG;
+					free(pdat[i]->sym_name); //释放空间
+					pdat[i]->sym_name = NULL;
+				}
+				break;
+		//	default:
+		//		printf();
+			}
+
+		}
+
+	}
+}
+
+//语法分析
+int yacc(array *arr)
+{
+
+	int *sym_stack; //语法分析栈，存储数组的序号
+	int i,n;
+	sym_tb **pdat;
+
+	if(!arr){
+		printf("arr is NULL\n");
+		return -1;
+	}
+
+	n = arr->len;
+	pdat = (sym_tb **)arr->data;
+
+	sym_stack = my_mallo(1024);//栈的深度
+
+#define ST_IDLE 0
+	int status = ST_IDLE;
+
+	for(i=0; i< n;i++){
+
+		switch(status){
+		case ST_IDLE:
+
+			break;
+		}
+
+	}
+
+
+
+	return 0;
+}
