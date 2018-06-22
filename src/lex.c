@@ -39,17 +39,17 @@ static sym_tb *alloc_sym()
 {
 	//分配链表结构
 	struct pnode *pn = (struct pnode *)my_malloc(sizeof(struct pnode));
-	pn->next = NULL;
-	if(!sym_head){
-		sym_head = pn;
-		sym_curr = pn;
+	pn->next = NULL;//新节点下一链必须为NULL
+	if(!sym_head){ //第一次初始化
+		sym_head = pn; //sym_head指向链表的头
+		sym_curr = pn; //sym_curr指向当前的新节点
 	}else{
 		sym_curr->next = pn;
 		sym_curr = pn;
 	}
 
 	sym_tb *tb = my_malloc(sizeof(sym_tb));
-	sym_curr->data = tb;
+	sym_curr->data = tb;//分配的数据添加到链表中
 	node_num++; //节点个数
 	return tb;
 
@@ -58,16 +58,17 @@ static sym_tb *alloc_sym()
 static void free_pnode()
 {
 	while(sym_head){
-		sym_curr = sym_head->next;
-		free(sym_head);
+		sym_curr = sym_head->next; //保存下一节点的地址
+		free(sym_head); //释放头结点
 		sym_head = sym_curr;
 	}
 }
-
+//把链表换成数组便于操作
 static array *create_array_fr_node()
 {
 	int i;
-	sym_tb **dat = my_malloc(node_num*sizeof(char *));
+	sym_tb **dat = my_malloc(node_num*sizeof(char *));//分配数组指针
+
 	struct pnode *sym_pos = sym_head;
 	array *arr = my_malloc(sizeof(array));
 
@@ -76,7 +77,7 @@ static array *create_array_fr_node()
 		sym_pos = sym_pos->next;
 	}
 	free_pnode();
-	arr->len = node_num;
+	arr->len = node_num; //数组元素个数
 	arr->data = (void **)dat;
 
 	return arr;
@@ -95,22 +96,17 @@ array *lex(char *filename)
 		perror("fopen:");
 		return NULL;
 	}
+	//求文件的长度
 	fseek(fp, 0, SEEK_END);
 	file_len = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
 
 	file_data = my_malloc(file_len+1);
+	//把文件全部读入内存，注意 fread返回值为读出的字节数，当文件为DOS格式 file_len != ret,
+	//DOS格式 \r\n 中\r被fread滤掉
 	ret = fread(file_data, 1,file_len, fp);
-	/*
-	if(ret != file_len){ //文本文件为UNIX格式，为DOS格式时候不等
-		printf("fread error %d %d\n",ret, file_len);
-		printf("%s\n",file_data);
-		free(file_data);
-		fclose(fp);
-		return NULL;
-	}*/
-	file_data[file_len] = '\0';
 
+	file_data[file_len] = '\0';
 	fclose(fp);
 
 	line = 1;
@@ -181,7 +177,13 @@ array *lex(char *filename)
 		    		++src;
 		    	}
 		    }
-		     else { //除法
+		    else if(*src == '='){  // /= ;a /= b;
+		    	sym_tb *sym = alloc_sym();
+		    	sym->sym_type = SYM_OP; //运算符
+		    	sym->value = OP_DIV_EQ; // /=
+		    	sym->line = line;
+		    }
+		    else { //除法
 		    	 sym_tb *sym = alloc_sym();
 		    	 sym->sym_type = SYM_OP; //运算符
 		    	 sym->value = OP_DIV; //
@@ -231,7 +233,13 @@ array *lex(char *filename)
 			 {
 				 ++src;
 				 sym->value = OP_INC; //++ ,加一
-			 } else
+			 }
+			 else if (*src == '=')
+			 {
+				 ++src;
+				 sym->value = OP_ADD_EQ; // +=
+			 }
+			 else
 				 sym->value = OP_ADD; //add +=不支持
 		 } else if (tmp == '-') {
 			 sym_tb *sym = alloc_sym();
@@ -240,7 +248,15 @@ array *lex(char *filename)
 			 if (*src == '-') {
 				 ++src;
 				 sym->value = OP_DEC; //--
-			 } else
+			 } else if (*src == '>') { // -> 指针
+				 ++src;
+				 sym->value = OP_DEREF; //->
+			 }
+			 else if (*src == '=') { // -=
+			 	++src;
+			 	sym->value = OP_SUB_EQ; //-=
+			 }
+			 else
 				 sym->value = OP_SUB; //-,
 		 } else if (tmp == '!') {
 			 sym_tb *sym = alloc_sym();
@@ -261,6 +277,10 @@ array *lex(char *filename)
 			 } else if (*src == '<') {
 				 ++src;
 				 sym->value = OP_SHL; // <<
+				 if(*src == '='){ // <<=
+					 ++src;
+					 sym->value = OP_SHL_EQ;
+				 }
 			 } else
 				 sym->value = OP_LT; // <
 		 }else if (tmp == '>') {
@@ -273,6 +293,10 @@ array *lex(char *filename)
 			 } else if (*src == '>') {
 				 ++src;
 				 sym->value = OP_SHR; //>>
+				 if(*src == '='){ // >>=
+				 	++src;
+				 	sym->value = OP_SHR_EQ;
+				 }
 			 } else
 				 sym->value = OP_GT; // >
 		 }else if (tmp == '|') {
@@ -282,7 +306,11 @@ array *lex(char *filename)
 			 if (*src == '|') {
 				 ++src;
 				 sym->value = OP_LOR;  // ||
-			 } else
+			 }else if (*src == '=') {
+				 ++src;
+				 sym->value = OP_LOR_EQ;  // |=
+			 }
+			 else
 				 sym->value = OP_OR; // |
 		 }else if (tmp == '&') {
 			 sym_tb *sym = alloc_sym();
@@ -292,23 +320,40 @@ array *lex(char *filename)
 			 if (*src == '&') {
 				 ++src;
 				 sym->value = OP_LAN;  // &&
-			 } else
+			 }
+			 else if (*src == '=') {
+				 ++src;
+				 sym->value = OP_LAN_EQ;  // &=
+			 }
+			 else
 				 sym->value = OP_AND;  // &
 		 }else if (tmp == '^') {
 			 sym_tb *sym = alloc_sym();
 			 sym->line = line;
 			 sym->sym_type = SYM_OP; //运算符
 			 sym->value = OP_XOR;  // ^
+			 if (*src == '=') {
+			 	++src;
+			 	sym->value = OP_XOR_EQ;  // ^=
+			 }
 		 } else if (tmp == '%') {
 			 sym_tb *sym = alloc_sym();
 			 sym->line = line;
 			 sym->sym_type = SYM_OP; //运算符
 			 sym->value = OP_MOD;  // %
+			 if (*src == '=') { // %=
+				 ++src;
+				sym->value = OP_MOD_EQ;  // %=
+			}
 		 }else if (tmp == '*') {  // *= ,取指针内容
 			 sym_tb *sym = alloc_sym();
 			 sym->line = line;
 			 sym->sym_type = SYM_OP; //运算符
 			 sym->value = OP_MUL;  // *
+			 if (*src == '=') {
+			 	++src;
+			 	sym->value = OP_MUL_EQ;  // *=
+			 }
 		 } else if (tmp == '[') {
 			 sym_tb *sym = alloc_sym();
 			 sym->line = line;
@@ -361,6 +406,12 @@ array *lex(char *filename)
 			 sym_tb *sym = alloc_sym();
 			 sym->line = line;
 			 sym->sym_type = SYM_PU; //点号
+			 // ... 变参
+			 if(*src == '.' && *(src+1) == '.'){
+				 src++;
+				 src++;
+				 sym->sym_type = SYM_ELL; // ... 变参
+			 }
 		 }else if((tmp == ' ') || (tmp == '\t')){ //空格 越过
 			 continue;
 		 }else{

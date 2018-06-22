@@ -23,7 +23,7 @@
 #define SYM_LB   12  //左大括号 {
 #define SYM_RB   13  //右大括号 }
 #define SYM_PU   14  //点号 .
-
+#define SYM_ELL  15  //... 变参 ellipseis
 #define SYM_KW   20  //c语言关键字
 
 
@@ -54,7 +54,18 @@
 #define OP_DEC 			22	// --
 #define OP_NOT			23	// !
 #define OP_BNO			24	// ~
-// +=, -=,在语法分析中处理
+// +=, -=
+#define OP_DIV_EQ		25 // /=
+#define OP_SHL_EQ		26 // <<= 左移等于
+#define OP_SHR_EQ		27 // >>= 右移等于
+#define OP_MOD_EQ		28 // %= 取余等于
+#define OP_ADD_EQ		29 // +=
+#define OP_LAN_EQ		30 // &=
+#define OP_DEREF		31 // -> 指针运算
+#define OP_SUB_EQ		32 // -=
+#define OP_LOR_EQ		33 // |=
+#define OP_MUL_EQ		34 // *=
+#define OP_XOR_EQ		35 // ^=
 
 //关键字
 #define KW_AUTO			1
