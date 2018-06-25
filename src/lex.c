@@ -15,6 +15,9 @@
 
 #include "lex.h"
 
+//处理关键字,内置宏
+static void lex2(array *arr);
+
 static void *my_malloc(int len)
 {
 	void *p;
@@ -87,6 +90,7 @@ array *lex(char *filename)
 {
 	//打开的当前文件
 	FILE *fp;
+	array *arr = NULL;
 	int file_len;
 	int ret;
 	char *file_data;
@@ -420,7 +424,9 @@ array *lex(char *filename)
 
 	}
 	//创建数组，释放节点
-	return create_array_fr_node();
+	arr = create_array_fr_node();
+	lex2(arr);
+	return arr;
 }
 
 //释放节点
@@ -440,8 +446,8 @@ void free_array(array *arr)
 	arr->len = 0;
 }
 
-
-void lex2(array *arr)
+//词法二次处理
+static void lex2(array *arr)
 {
 	int i,n;
 	sym_tb **pdat;
@@ -681,40 +687,4 @@ void lex2(array *arr)
 		}
 
 	}
-}
-
-//语法分析
-int yacc(array *arr)
-{
-
-	int *sym_stack; //语法分析栈，存储数组的序号
-	int i,n;
-	sym_tb **pdat;
-
-	if(!arr){
-		printf("arr is NULL\n");
-		return -1;
-	}
-
-	n = arr->len;
-	pdat = (sym_tb **)arr->data;
-
-	sym_stack = my_mallo(1024);//栈的深度
-
-#define ST_IDLE 0
-	int status = ST_IDLE;
-
-	for(i=0; i< n;i++){
-
-		switch(status){
-		case ST_IDLE:
-
-			break;
-		}
-
-	}
-
-
-
-	return 0;
 }

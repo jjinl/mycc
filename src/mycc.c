@@ -26,7 +26,6 @@ int main(void) {
 		printf("词法分析出错\n");
 		return -1;
 	}
-	lex2(arr); //关键字，内置宏处理
 	pdat = (sym_tb **)arr->data;
 
 

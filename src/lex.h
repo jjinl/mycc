@@ -134,8 +134,6 @@ typedef struct {
 */
 array* lex(char *filename);
 
-//处理关键字,内置宏
-void lex2(array *arr);
 
 //释放节点
 void free_array(array *arr);
